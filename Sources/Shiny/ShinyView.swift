@@ -12,7 +12,7 @@ import AppKit
 #endif
 
 public extension View {
-    func shiny(_ surface: Gradient = .rainbow) -> some View {
+    func shiny(_ surface: Gradient = .rainbow, enabled: Bool = true) -> some View {
         return ShinyView(surface, content: self).environmentObject(MotionManager.main)
     }
 }
@@ -20,14 +20,18 @@ public extension View {
 internal struct ShinyView<Content>: View where Content: View {
     
     @EnvironmentObject var model: MotionManager
+  
+    let enabled: Bool
     
-    init(_ surface: Gradient = .rainbow, content: Content) {
+    init(_ surface: Gradient = .rainbow, enabled: Bool = true, content: Content) {
         self.surface = surface
+        self.enabled = enabled
         self.content = content
     }
     
-    init(_ surface: Gradient = .rainbow, @ViewBuilder content: () -> Content) {
+    init(_ surface: Gradient = .rainbow, enabled: Bool = true, @ViewBuilder content: () -> Content) {
         self.surface = surface
+        self.enabled = enabled
         self.content = content()
     }
     
@@ -77,5 +81,14 @@ internal struct ShinyView<Content>: View where Content: View {
                 }
                 .mask(self.content)
             })
+            .onAppear {
+              if enabled {
+                model.startUpdates()
+              }
+              else {
+                model.stopUpdates()
+              }
+            }
+            .onDisappear(perform: model.stopUpdates)
     }
 }

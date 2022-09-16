@@ -31,10 +31,6 @@ internal class MotionManager: ObservableObject {
   init() {
 #if os(iOS)
     motionInput.deviceMotionUpdateInterval = 0.2
-    motionInput.startDeviceMotionUpdates()
-    displayLink = CADisplayLink(target: self, selector: #selector(displayLinkFired))
-    displayLink?.preferredFramesPerSecond = 24
-    displayLink?.add(to: .main, forMode: .common)
 #elseif os(macOS)
     NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) {
       let screenWidth = NSScreen.main?.frame.width ?? 1920
@@ -48,15 +44,28 @@ internal class MotionManager: ObservableObject {
   
   deinit {
 #if os(iOS)
-    displayLink?.invalidate()
-    displayLink = nil
-    motionInput.stopDeviceMotionUpdates()
+    stopUpdates()
 #endif
   }
 }
 
 #if os(iOS)
 internal extension MotionManager {
+  func startUpdates() {
+    if !motionInput.isDeviceMotionActive && motionInput.isDeviceMotionAvailable {
+      motionInput.startDeviceMotionUpdates()
+      displayLink = CADisplayLink(target: self, selector: #selector(displayLinkFired))
+      displayLink?.preferredFramesPerSecond = 24
+      displayLink?.add(to: .main, forMode: .common)
+    }
+  }
+  
+  func stopUpdates() {
+    displayLink?.invalidate()
+    displayLink = nil
+    motionInput.stopDeviceMotionUpdates()
+  }
+  
   @objc fileprivate func displayLinkFired(_ sender: CADisplayLink) {
     if let yaw = motionInput.yaw,
        let pitch = motionInput.pitch,
