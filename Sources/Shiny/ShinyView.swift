@@ -9,6 +9,10 @@ import SwiftUI
 import CoreMotion
 #if os(macOS)
 import AppKit
+typealias Application = NSApplication
+#else
+import UIKit
+typealias Application = UIApplication
 #endif
 
 public extension View {
@@ -23,17 +27,18 @@ internal struct ShinyView<Content>: View where Content: View {
     
     @EnvironmentObject var model: MotionManager
   
-    let enabled: Bool
+#if os(iOS)
+  private let keyboardWillShowPublisher = NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
+  private let keyboardDidHidePublisher = NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)
+#endif
     
-    init(_ surface: Gradient = .rainbow, enabled: Bool = true, content: Content) {
+    init(_ surface: Gradient = .rainbow, content: Content) {
         self.surface = surface
-        self.enabled = enabled
         self.content = content
     }
     
-    init(_ surface: Gradient = .rainbow, enabled: Bool = true, @ViewBuilder content: () -> Content) {
+    init(_ surface: Gradient = .rainbow, @ViewBuilder content: () -> Content) {
         self.surface = surface
-        self.enabled = enabled
         self.content = content()
     }
     
@@ -84,14 +89,7 @@ internal struct ShinyView<Content>: View where Content: View {
                 .mask(self.content)
             })
 #if os(iOS)
-            .onAppear {
-              if enabled {
-                model.startUpdates()
-              }
-              else {
-                model.stopUpdates()
-              }
-            }
+            .onAppear(perform: model.startUpdates)
             .onDisappear(perform: model.stopUpdates)
             .onChange(of: scenePhase, perform: { newPhase in
               if scenePhase == .active {
@@ -100,6 +98,12 @@ internal struct ShinyView<Content>: View where Content: View {
               else if newPhase == .active {
                 model.startUpdates()
               }
+            })
+            .onReceive(keyboardWillShowPublisher, perform: { _ in
+              model.stopUpdates()
+            })
+            .onReceive(keyboardDidHidePublisher, perform: { _ in
+              model.startUpdates()
             })
 #endif
     }
