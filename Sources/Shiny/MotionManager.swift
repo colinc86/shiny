@@ -33,8 +33,8 @@ internal class MotionManager: ObservableObject {
     motionInput.deviceMotionUpdateInterval = 0.2
     motionInput.startDeviceMotionUpdates()
     displayLink = CADisplayLink(target: self, selector: #selector(displayLinkFired))
-    displayLink?.preferredFramesPerSecond = 30
-    displayLink?.add(to: RunLoop.current, forMode: RunLoop.Mode.default)
+    displayLink?.preferredFramesPerSecond = 24
+    displayLink?.add(to: .main, forMode: .common)
 #elseif os(macOS)
     NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) {
       let screenWidth = NSScreen.main?.frame.width ?? 1920
@@ -58,15 +58,13 @@ internal class MotionManager: ObservableObject {
 #if os(iOS)
 internal extension MotionManager {
   @objc fileprivate func displayLinkFired(_ sender: CADisplayLink) {
-    DispatchQueue.main.async { [weak self] in
-      if let yaw = self?.motionInput.yaw,
-         let pitch = self?.motionInput.pitch,
-         let roll = self?.motionInput.roll
-      {
-        self?.yaw = CGFloat(yaw)
-        self?.pitch = CGFloat(pitch)
-        self?.roll = CGFloat(roll)
-      }
+    if let yaw = motionInput.yaw,
+       let pitch = motionInput.pitch,
+       let roll = motionInput.roll
+    {
+      self.yaw = CGFloat(yaw)
+      self.pitch = CGFloat(pitch)
+      self.roll = CGFloat(roll)
     }
   }
 }
