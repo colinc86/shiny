@@ -81,6 +81,7 @@ internal struct ShinyView<Content>: View where Content: View {
                 }
                 .mask(self.content)
             })
+#if os(iOS)
             .onAppear {
               if enabled {
                 model.startUpdates()
@@ -90,5 +91,6 @@ internal struct ShinyView<Content>: View where Content: View {
               }
             }
             .onDisappear(perform: model.stopUpdates)
+#endif
     }
 }
