@@ -18,6 +18,8 @@ public extension View {
 }
 
 internal struct ShinyView<Content>: View where Content: View {
+  
+    @Environment(\.scenePhase) var scenePhase
     
     @EnvironmentObject var model: MotionManager
   
@@ -91,6 +93,14 @@ internal struct ShinyView<Content>: View where Content: View {
               }
             }
             .onDisappear(perform: model.stopUpdates)
+            .onChange(of: scenePhase, perform: { newPhase in
+              if scenePhase == .active {
+                model.stopUpdates()
+              }
+              else if newPhase == .active {
+                model.startUpdates()
+              }
+            })
 #endif
     }
 }
