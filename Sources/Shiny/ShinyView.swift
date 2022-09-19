@@ -16,7 +16,7 @@ typealias Application = UIApplication
 #endif
 
 public extension View {
-    func shiny(_ surface: Gradient = .rainbow, enabled: Bool = true) -> some View {
+    func shiny(_ surface: Gradient = .rainbow) -> some View {
         return ShinyView(surface, content: self).environmentObject(MotionManager.main)
     }
 }
@@ -30,6 +30,8 @@ internal struct ShinyView<Content>: View where Content: View {
 #if os(iOS)
   private let keyboardWillShowPublisher = NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
   private let keyboardDidHidePublisher = NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)
+  private let applicationWillResignActivePublisher = NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)
+  private let applicationDidBecomeActivePublisher = NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
 #endif
     
     init(_ surface: Gradient = .rainbow, content: Content) {
@@ -89,15 +91,20 @@ internal struct ShinyView<Content>: View where Content: View {
                 .mask(self.content)
             })
 #if os(iOS)
-            .onAppear(perform: model.startUpdates)
-            .onDisappear(perform: model.stopUpdates)
-            .onChange(of: scenePhase, perform: { newPhase in
+            .onAppear {
               if scenePhase == .active {
-                model.stopUpdates()
-              }
-              else if newPhase == .active {
                 model.startUpdates()
               }
+              else {
+                model.stopUpdates()
+              }
+            }
+            .onDisappear(perform: model.stopUpdates)
+            .onReceive(applicationWillResignActivePublisher, perform: { _ in
+              model.stopUpdates()
+            })
+            .onReceive(applicationDidBecomeActivePublisher, perform: { _ in
+              model.startUpdates()
             })
             .onReceive(keyboardWillShowPublisher, perform: { _ in
               model.stopUpdates()
