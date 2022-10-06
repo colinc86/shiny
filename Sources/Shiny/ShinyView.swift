@@ -9,6 +9,10 @@ import SwiftUI
 import CoreMotion
 #if os(macOS)
 import AppKit
+typealias Application = NSApplication
+#else
+import UIKit
+typealias Application = UIApplication
 #endif
 
 public extension View {
@@ -18,8 +22,14 @@ public extension View {
 }
 
 internal struct ShinyView<Content>: View where Content: View {
-    
+  
+    @Environment(\.scenePhase) var scenePhase
     @EnvironmentObject var model: MotionManager
+  
+#if os(iOS)
+  private let applicationWillResignActivePublisher = NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)
+  private let applicationDidBecomeActivePublisher = NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+#endif
     
     init(_ surface: Gradient = .rainbow, content: Content) {
         self.surface = surface
@@ -77,5 +87,13 @@ internal struct ShinyView<Content>: View where Content: View {
                 }
                 .mask(self.content)
             })
+#if os(iOS)
+            .onReceive(applicationWillResignActivePublisher, perform: { _ in
+              model.stopUpdates()
+            })
+            .onReceive(applicationDidBecomeActivePublisher, perform: { _ in
+              model.startUpdates()
+            })
+#endif
     }
 }
