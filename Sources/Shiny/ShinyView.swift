@@ -24,7 +24,6 @@ public extension View {
 internal struct ShinyView<Content>: View where Content: View {
   
     @Environment(\.scenePhase) var scenePhase
-    
     @EnvironmentObject var model: MotionManager
   
 #if os(iOS)
