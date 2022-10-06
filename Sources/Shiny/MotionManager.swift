@@ -40,6 +40,8 @@ internal class MotionManager: ObservableObject {
       return $0
     }
 #endif
+    
+    startUpdates()
   }
   
   deinit {
