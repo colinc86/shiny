@@ -28,8 +28,6 @@ internal struct ShinyView<Content>: View where Content: View {
     @EnvironmentObject var model: MotionManager
   
 #if os(iOS)
-  private let keyboardWillShowPublisher = NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
-  private let keyboardDidHidePublisher = NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)
   private let applicationWillResignActivePublisher = NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)
   private let applicationDidBecomeActivePublisher = NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
 #endif
@@ -91,25 +89,10 @@ internal struct ShinyView<Content>: View where Content: View {
                 .mask(self.content)
             })
 #if os(iOS)
-            .onAppear {
-              if scenePhase == .active {
-                model.startUpdates()
-              }
-              else {
-                model.stopUpdates()
-              }
-            }
-            .onDisappear(perform: model.stopUpdates)
             .onReceive(applicationWillResignActivePublisher, perform: { _ in
               model.stopUpdates()
             })
             .onReceive(applicationDidBecomeActivePublisher, perform: { _ in
-              model.startUpdates()
-            })
-            .onReceive(keyboardWillShowPublisher, perform: { _ in
-              model.stopUpdates()
-            })
-            .onReceive(keyboardDidHidePublisher, perform: { _ in
               model.startUpdates()
             })
 #endif
